@@ -1,0 +1,30 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1"]
+
+[node name="TestScene" type="Node2D"]
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+position = Vector2(200, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
+shape = SubResource("RectangleShape2D_1")
+metadata/vercidium_audio_material = "brick"
+
+[node name="StaticBody2D2" type="StaticBody2D" parent="."]
+position = Vector2(-200, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2"]
+shape = SubResource("CircleShape2D_1")
+metadata/vercidium_audio_material = "metal"
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+position = Vector2(0, 200)
+polygon = PackedVector2Array(-100, -20, 100, -20, 100, 20, -100, 20)
+metadata/vercidium_audio_material = "woodindoor"
+
+[node name="Line2D" type="Line2D" parent="."]
+points = PackedVector2Array(-100, -200, 100, -200)
+metadata/vercidium_audio_material = "concrete"
