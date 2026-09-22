@@ -1,0 +1,31 @@
+.sconsign.dblite
+.scons_cache/
+*.os
+*.obj
+addons/vaudio-godot-native-openal-2d/bin/
+devproject/.godot/
+devproject/addons/
+src/gen/
+
+# Never commit OpenAL or vaudio binaries
+thirdparty/
+
+# Ignore Godot .import files
+*.import
+
+# Local machine paths for build.bat - never commit
+.env
+
+# Private
+user_context.md
+
+# Claude permissions
+.claude/**
+
+# Mac
+.DS_Store
+addons/.DS_Store
+addons/vaudio-godot-native-openal-2d/.DS_Store
+
+# Build logs
+*.log
