@@ -1,0 +1,33 @@
+[configuration]
+
+entry_symbol = "vaudio_godot_native_openal_2d_library_init"
+compatibility_minimum = "4.5"
+version = "1.9.0"
+
+[libraries]
+
+windows.editor.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.windows.editor.x86_64.dll"
+windows.debug.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.windows.template_release.x86_64.dll"
+linux.editor.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.linux.editor.x86_64.so"
+linux.debug.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.linux.template_release.x86_64.so"
+macos.editor.arm64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.macos.editor.arm64.dylib"
+macos.debug.arm64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.macos.template_debug.arm64.dylib"
+macos.release.arm64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.macos.template_release.arm64.dylib"
+
+[icons]
+
+VACustomMaterial = "res://addons/vaudio-godot-native-openal-2d/icons/VACustomMaterial.svg"
+VADefaultMaterial = "res://addons/vaudio-godot-native-openal-2d/icons/VADefaultMaterial.svg"
+VAEmitter = "res://addons/vaudio-godot-native-openal-2d/icons/VAEmitter.svg"
+VAInputStreamSource = "res://addons/vaudio-godot-native-openal-2d/icons/VAInputStreamSource.svg"
+VAListener = "res://addons/vaudio-godot-native-openal-2d/icons/VAListener.svg"
+VANetworkedStreamSource = "res://addons/vaudio-godot-native-openal-2d/icons/VANetworkedStreamSource.svg"
+VASource = "res://addons/vaudio-godot-native-openal-2d/icons/VASource.svg"
+VASourceAmbient = "res://addons/vaudio-godot-native-openal-2d/icons/VASourceAmbient.svg"
+VASourceLeech = "res://addons/vaudio-godot-native-openal-2d/icons/VASourceLeech.svg"
+VASourceRelative = "res://addons/vaudio-godot-native-openal-2d/icons/VASourceRelative.svg"
+VAStreamSource = "res://addons/vaudio-godot-native-openal-2d/icons/VAStreamSource.svg"
+VAVisualisation = "res://addons/vaudio-godot-native-openal-2d/icons/VAVisualisation.svg"
+VAWorld = "res://addons/vaudio-godot-native-openal-2d/icons/VAWorld.svg"
