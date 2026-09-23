@@ -1,13 +1,18 @@
 #include "va_world.h"
 
+#include <godot_cpp/classes/camera2d.hpp>
+#include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/sub_viewport.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/callable_method_pointer.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/variant/vector3.hpp>
 
 #include "openal/al_manager.h"
+#include "va_conversion_plugin.h"
 #include "va_conversions.h"
+#include "va_debugger_plugin.h"
 #include "va_emitter.h"
 #include "va_engine_util.h"
 
@@ -108,8 +113,12 @@ void VAWorld::_bind_methods()
     ClassDB::bind_method(D_METHOD("get_rendering_enabled"), &VAWorld::get_rendering_enabled);
     ClassDB::bind_method(D_METHOD("set_rendering_enabled", "value"), &VAWorld::set_rendering_enabled);
 
+    ClassDB::bind_method(D_METHOD("get_sync_viewport"), &VAWorld::get_sync_viewport);
+    ClassDB::bind_method(D_METHOD("set_sync_viewport", "value"), &VAWorld::set_sync_viewport);
+
     ADD_GROUP("Rendering", "");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "rendering_enabled"), "set_rendering_enabled", "get_rendering_enabled");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "sync_viewport"), "set_sync_viewport", "get_sync_viewport");
 
     // Read-only timing stats (milliseconds) - no ADD_PROPERTY, called directly from GDScript like methods (world.get_main_thread_time()).
     ClassDB::bind_method(D_METHOD("get_main_thread_time"), &VAWorld::get_main_thread_time);
@@ -239,7 +248,12 @@ void VAWorld::_draw()
 void VAWorld::_process(double delta)
 {
     if (IS_EDITOR_HINT())
+    {
+        if (sync_viewport)
+            send_viewport_camera_to_running_game();
+
         return;
+    }
 
     if (listener)
     {
@@ -266,6 +280,28 @@ void VAWorld::_process(double delta)
             VA_ERROR_NAMED_RESULT(result, "Update failed");
         }
     }
+}
+
+void VAWorld::send_viewport_camera_to_running_game()
+{
+    if (!Engine::get_singleton()->has_singleton(VAConversionPlugin::DEBUGGER_BRIDGE_SINGLETON_NAME))
+        return;
+
+    SubViewport *viewport = EditorInterface::get_singleton()->get_editor_viewport_2d();
+    Camera2D *camera = viewport ? viewport->get_camera_2d() : nullptr;
+
+    if (!camera)
+        return;
+
+    Object *singleton_object = Engine::get_singleton()->get_singleton(VAConversionPlugin::DEBUGGER_BRIDGE_SINGLETON_NAME);
+    VADebuggerBridge *bridge = Object::cast_to<VADebuggerBridge>(singleton_object);
+    VADebuggerPlugin *debugger_plugin = bridge ? bridge->get_debugger_plugin() : nullptr;
+
+    if (!debugger_plugin)
+        return;
+
+    // Camera2D::get_zoom() is a Vector2, but vaWorldSetCameraZoom takes a single uniform scale - x and y only differ under non-uniform zoom, which vaudio's 2D camera sync doesn't support.
+    debugger_plugin->sync_viewport_camera(camera->get_global_position(), camera->get_global_rotation(), camera->get_zoom().x);
 }
 
 // Rotates a world-space direction into the listener's local space, given the listener's single 2D rotation angle - matches World.CalculateListenerRelativePan in dotnet/2d/world/public/World.2D.cs (no native vaWorldCalculateListenerRelativePan exists for 2D, unlike 3D).

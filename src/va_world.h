@@ -85,10 +85,14 @@ private:
 
     bool pending_shutdown = false;
     bool rendering_enabled = true;
+    bool sync_viewport = true;
 
     void init_scene();
     void on_node_added(Node *node);
     void on_node_removed(Node *node);
+
+    // Editor-only: relays the 2D editor viewport's camera transform/zoom to every active game session, polled from _process while IS_EDITOR_HINT() via sync_viewport.
+    void send_viewport_camera_to_running_game();
 
     // Reports unknown material metadata strings when in the editor, not used at runtime.
     void validate_materials_in_editor(Node *node);
@@ -197,6 +201,16 @@ public:
 
         if (world)
             vaWorldSetRenderingEnabled(world, value);
+    }
+
+    bool get_sync_viewport() const
+    {
+        return sync_viewport;
+    }
+
+    void set_sync_viewport(bool value)
+    {
+        sync_viewport = value;
     }
 
     Vector2 get_position() const
