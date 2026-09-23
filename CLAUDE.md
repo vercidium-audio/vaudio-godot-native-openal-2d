@@ -69,13 +69,6 @@ If the code is not inside a Node class, use the non-NAMED versions:
 #define VA_ERROR(...) (godot::UtilityFunctions::push_error(VA_LOG_TAG, __VA_ARGS__))
 ```
 
-# Continuous Cleanup
-
-While working, if you notice unclean logs, fix them:
-- Use the NAMED variants above if possible
-- Don't log internal function names like `VAWorld::set_size` instead make the error nice and human readable, like `Failed to set size` instead of `VAWorld::set_size failed`. Remember the user isn't working with this code, they are working from the Godot editor
-- Many logs repeat this text: `(VAResult=", VAResultToString(result), ")"`, maybe add a new macro for VA_ERROR_RESULT and VA_ERROR_NAMED_RESULT that also takes the VAResult as a parameter and automatically appends it in the log.
-
 # References
 
 vaudio.h lives at `thirdparty/vaudio/include/vaudio.h`
