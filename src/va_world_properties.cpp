@@ -14,6 +14,7 @@ namespace va_godot
 void VAWorld::set_position(const Vector2 &value)
 {
     Node2D::set_position(value);
+    queue_redraw();
 
     if (!world)
         return;
@@ -27,6 +28,7 @@ void VAWorld::set_position(const Vector2 &value)
 void VAWorld::set_bounds_size(Vector2 value)
 {
     bounds_size = value;
+    queue_redraw();
 
     if (!world)
         return;
@@ -40,6 +42,7 @@ void VAWorld::set_bounds_size(Vector2 value)
 void VAWorld::set_bounds_color(Color value)
 {
     bounds_color = value;
+    queue_redraw();
 }
 
 void VAWorld::set_epsilon(float value)

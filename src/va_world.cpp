@@ -224,6 +224,18 @@ void VAWorld::_exit_tree()
     }
 }
 
+// Draws the bounds AABB as a filled+outlined rect in the 2D viewport, editor-only - matches VAWorldGizmo.cs's Node2D._draw() override in the Mono addon. 2D has no drag handles, unlike 3D's EditorNode3DGizmoPlugin approach - bounds_size is edited directly in the inspector.
+void VAWorld::_draw()
+{
+    if (!IS_EDITOR_HINT())
+        return;
+
+    Rect2 rect(Vector2(), bounds_size);
+
+    draw_rect(rect, bounds_color, true);
+    draw_rect(rect, Color(bounds_color, 1.0f), false, 2.0f);
+}
+
 void VAWorld::_process(double delta)
 {
     if (IS_EDITOR_HINT())

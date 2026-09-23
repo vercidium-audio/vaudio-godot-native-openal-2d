@@ -108,6 +108,7 @@ public:
     void _enter_tree() override;
     void _exit_tree() override;
     void _process(double delta) override;
+    void _draw() override;
 
     // Compatibility shim: forwards the pre-1.9.0 "refresh_ray_count" property to trail_refresh_count so existing .tscn/.tres files keep loading.
     bool _set(const StringName &p_name, const Variant &p_value);

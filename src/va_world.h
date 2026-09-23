@@ -128,6 +128,7 @@ public:
     void _ready() override;
     void _exit_tree() override;
     void _process(double delta) override;
+    void _draw() override;
     void _validate_property(PropertyInfo &p_property) const;
 
     ::VAWorld *get_handle() const
