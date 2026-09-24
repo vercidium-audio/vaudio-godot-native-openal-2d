@@ -3,7 +3,9 @@
 #include <godot_cpp/classes/camera2d.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/scene_tree.hpp>
 #include <godot_cpp/classes/sub_viewport.hpp>
+#include <godot_cpp/classes/window.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/callable_method_pointer.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
@@ -150,7 +152,7 @@ VAWorld::VAWorld()
     world = vaWorldCreate();
 
     // These three calls are guaranteed to pass, no need to check result.
-    vaWorldSetCoordinateSystem(world, VACoordinateSystemGodot);
+    vaWorldSetCoordinateSystem(world, VACoordinateSystemGodot2D);
     vaWorldSetUserData(world, this);
     vaWorldSetOnReverbUpdatedCallback(world, &VAWorld::on_reverb_updated_trampoline);
 
@@ -263,8 +265,9 @@ void VAWorld::_process(double delta)
         {
             Vector2 position = listener->get_global_position();
             float rotation = listener->get_global_rotation();
-            Vector3 forward(cosf(rotation), sinf(rotation), 0.0f);
-            Vector3 up(0.0f, 0.0f, 1.0f);
+            // Top-down: rotation 0 faces screen-up. Up is -Z because Godot's Y-down XY plane is mirrored relative to OpenAL's right-handed space.
+            Vector3 forward(sinf(rotation), -cosf(rotation), 0.0f);
+            Vector3 up(0.0f, 0.0f, -1.0f);
 
             manager->set_listener_position(Vector3(position.x, position.y, 0.0f));
             manager->set_listener_orientation(forward, up);
@@ -304,16 +307,16 @@ void VAWorld::send_viewport_camera_to_running_game()
     debugger_plugin->sync_viewport_camera(camera->get_global_position(), camera->get_global_rotation(), camera->get_zoom().x);
 }
 
-// Rotates a world-space direction into the listener's local space, given the listener's single 2D rotation angle - matches World.CalculateListenerRelativePan in dotnet/2d/world/public/World.2D.cs (no native vaWorldCalculateListenerRelativePan exists for 2D, unlike 3D).
-static Vector2 CalculateListenerRelativePan2D(const Vector2 &world_vector, float listener_rotation)
+// Converts a relative direction (vaudio's internal Y-up space, not Godot's Y-down) into an EFX reverb pan vector, which is left-handed listener space (+X right, +Z forward). Godot's clockwise-positive rotation is counter-clockwise in Y-up space, so rotating by +rotation undoes it.
+static Vector3 CalculateListenerRelativePan2D(const VAVector &direction, float listener_rotation)
 {
-    float cos_yaw = cosf(-listener_rotation);
-    float sin_yaw = sinf(-listener_rotation);
+    float c = cosf(listener_rotation);
+    float s = sinf(listener_rotation);
 
-    float rotated_x = (world_vector.x * cos_yaw) + (world_vector.y * sin_yaw);
-    float rotated_y = -(world_vector.x * sin_yaw) + (world_vector.y * cos_yaw);
+    float right = (direction.x * c) - (direction.y * s);
+    float forward = (direction.x * s) + (direction.y * c);
 
-    return Vector2(rotated_x, rotated_y);
+    return Vector3(right, 0.0f, forward);
 }
 
 void VAWorld::on_reverb_updated()
@@ -363,17 +366,15 @@ void VAWorld::on_reverb_updated()
 
         if (relative_direction)
         {
-            // OpenAL pan is always 3D; the 2D world maps onto its XY plane with Z fixed at 0 - matches VAWorldReverbDimension.cs's ApplyGroupedEAXPan.
-            Vector2 world_direction = FromVAudio(*relative_direction);
-            float listener_rotation = listener->get_global_rotation();
-            Vector2 pan = CalculateListenerRelativePan2D(world_direction, listener_rotation);
+            // Matches VAWorldReverbDimension.cs's ApplyGroupedEAXPan
+            Vector3 pan = CalculateListenerRelativePan2D(*relative_direction, listener->get_global_rotation());
 
             params.reflectionsPan[0] = pan.x;
             params.reflectionsPan[1] = pan.y;
-            params.reflectionsPan[2] = 0.0f;
+            params.reflectionsPan[2] = pan.z;
             params.lateReverbPan[0] = pan.x;
             params.lateReverbPan[1] = pan.y;
-            params.lateReverbPan[2] = 0.0f;
+            params.lateReverbPan[2] = pan.z;
         }
 
         grouped_reverb_effects[i]->set_params(params);

@@ -1,5 +1,6 @@
 ; Engine configuration file.
-; It's best edited using the editor UI and not directly, since the parameters that go here are not all obvious.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
 ;
 ; Format:
 ;   [section] ; section goes between []
@@ -7,9 +8,12 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="vaudio-godot-native-openal-2d test project"
 run/main_scene="res://test_scene.tscn"
-config/features=PackedStringArray("4.5")
-config/icon="res://icon.svg"
+config/features=PackedStringArray("4.7")

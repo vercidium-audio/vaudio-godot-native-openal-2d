@@ -1,30 +1,118 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://bhsuosy4fold8"]
+
+[ext_resource type="AudioStream" uid="uid://dn467pdan7qgg" path="res://audio/speech.ogg" id="1_speech"]
+[ext_resource type="Script" uid="uid://ci0uk184bkivb" path="res://test_controller.gd" id="2_controller"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(40, 360)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_1"]
+radius = 60.0
 
-[node name="TestScene" type="Node2D"]
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_1"]
+radius = 30.0
+height = 160.0
 
-[node name="StaticBody2D" type="StaticBody2D" parent="."]
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_1"]
+a = Vector2(-100, 0)
+b = Vector2(100, 0)
+
+[node name="TestScene" type="Node2D" unique_id=191295999]
+script = ExtResource("2_controller")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=297691293]
+
+[node name="VAWorld" type="VAWorld" parent="." unique_id=176013925]
+position = Vector2(-560, -310)
+bounds_size = Vector2(1120, 620)
+meters_per_unit = 0.1001
+position = Vector2(-560, -310)
+
+[node name="VACustomMaterial" type="VACustomMaterial" parent="VAWorld" unique_id=1927224138]
+material_name = "carpet"
+absorption_lf = 0.4
+absorption_hf = 0.6
+
+[node name="Listener" type="VAListener" parent="." unique_id=537288614]
+occlusion_ray_count = 1024
+occlusion_bounce_count = 8
+permeation_ray_count = 256
+permeation_bounce_count = 4
+scattering_seed = 1765728616
+position = Vector2(-400, 0)
+
+[node name="VASource" type="VASource" parent="." unique_id=906397487]
+reverb_ray_count = 64
+reverb_bounce_count = 64
+scattering_seed = 1303946308
+streams = Array[AudioStream]([ExtResource("1_speech")])
+looping = true
+autoplay = true
+position = Vector2(372, -1)
+
+[node name="VAVisualisation" type="VAVisualisation" parent="VASource" unique_id=1644903379]
+
+[node name="BrickWall" type="StaticBody2D" parent="." unique_id=755688372]
 position = Vector2(200, 0)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BrickWall" unique_id=1154796431]
+position = Vector2(-18, 3)
+scale = Vector2(0.3, 1)
 shape = SubResource("RectangleShape2D_1")
 metadata/vercidium_audio_material = "brick"
 
-[node name="StaticBody2D2" type="StaticBody2D" parent="."]
-position = Vector2(-200, 0)
+[node name="BrickWallRight" type="StaticBody2D" parent="." unique_id=2077939601]
+position = Vector2(200, 0)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BrickWallRight" unique_id=165415291]
+position = Vector2(351, 0)
+shape = SubResource("RectangleShape2D_1")
+metadata/vercidium_audio_material = "brick"
+
+[node name="MetalCircle" type="StaticBody2D" parent="." unique_id=1117615401]
+position = Vector2(-150, -150)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="MetalCircle" unique_id=727502021]
 shape = SubResource("CircleShape2D_1")
 metadata/vercidium_audio_material = "metal"
 
-[node name="Polygon2D" type="Polygon2D" parent="."]
-position = Vector2(0, 200)
-polygon = PackedVector2Array(-100, -20, 100, -20, 100, 20, -100, 20)
+[node name="GlassCapsule" type="StaticBody2D" parent="." unique_id=927108106]
+position = Vector2(-150, 150)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GlassCapsule" unique_id=783683886]
+shape = SubResource("CapsuleShape2D_1")
+metadata/vercidium_audio_material = "glass"
+
+[node name="ConcreteSegment" type="StaticBody2D" parent="." unique_id=876542795]
+position = Vector2(0, -250)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ConcreteSegment" unique_id=1240950978]
+shape = SubResource("SegmentShape2D_1")
+metadata/vercidium_audio_material = "concrete"
+
+[node name="WoodPlank" type="Polygon2D" parent="." unique_id=353354668]
+position = Vector2(400, -180)
+color = Color(0.55, 0.36, 0.2, 1)
+polygon = PackedVector2Array(-150, -10, 150, -10, 150, 10, -150, 10)
 metadata/vercidium_audio_material = "woodindoor"
 
-[node name="Line2D" type="Line2D" parent="."]
-points = PackedVector2Array(-100, -200, 100, -200)
+[node name="CarpetPlank" type="Polygon2D" parent="." unique_id=1160927752]
+position = Vector2(400, 180)
+color = Color(0.6, 0.2, 0.25, 1)
+polygon = PackedVector2Array(-150, -10, 150, -10, 150, 10, -150, 10)
+metadata/vercidium_audio_material = "carpet"
+
+[node name="ConcreteFloor" type="Line2D" parent="." unique_id=1569362563]
+points = PackedVector2Array(-540, 200, -540, 290, 540, 290)
+default_color = Color(0.6, 0.6, 0.6, 1)
 metadata/vercidium_audio_material = "concrete"
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=844244459]
+
+[node name="Label" type="Label" parent="UI" unique_id=1766193281]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 600.0
+offset_bottom = 60.0
+text = "Move the mouse to move the listener. Hold right mouse to move the source instead.
+Enable Debug > Visible Collision Shapes to see the CollisionShape2D occluders."

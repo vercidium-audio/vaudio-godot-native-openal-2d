@@ -103,11 +103,11 @@ void initialize_vaudio_godot_native_openal_2d_module(ModuleInitializationLevel p
     ClassDB::register_class<va_godot::VAListener>();
     ClassDB::register_class<va_godot::VACustomMaterial>();
     ClassDB::register_class<VADefaultMaterial>();
-    ClassDB::register_abstract_class<va_godot::VARaytracedSource>();
+    ClassDB::register_abstract_class<VARaytracedSource>();
     ClassDB::register_class<VASource>();
-    ClassDB::register_class<va_godot::VASourceRelative>();
-    ClassDB::register_class<va_godot::VASourceAmbient>();
-    ClassDB::register_class<va_godot::VASourceLeech>();
+    ClassDB::register_class<VASourceRelative>();
+    ClassDB::register_class<VASourceAmbient>();
+    ClassDB::register_class<VASourceLeech>();
     ClassDB::register_class<VAStreamSource>();
     ClassDB::register_class<VAInputStreamSource>();
     ClassDB::register_class<VANetworkedStreamSource>();
