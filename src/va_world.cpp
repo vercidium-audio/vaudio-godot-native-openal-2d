@@ -327,18 +327,6 @@ float VAWorld::get_screen_content_scale()
     return scale > 0.0f ? scale : 1.0f;
 }
 
-// Converts a relative direction (vaudio's internal Y-up space, not Godot's Y-down) into an EFX reverb pan vector, which is left-handed listener space (+X right, +Z forward). Godot's clockwise-positive rotation is counter-clockwise in Y-up space, so rotating by +rotation undoes it.
-static Vector3 CalculateListenerRelativePan2D(const VAVector &direction, float listener_rotation)
-{
-    float c = cosf(listener_rotation);
-    float s = sinf(listener_rotation);
-
-    float right = (direction.x * c) - (direction.y * s);
-    float forward = (direction.x * s) + (direction.y * c);
-
-    return Vector3(right, 0.0f, forward);
-}
-
 void VAWorld::on_reverb_updated()
 {
     if (!listener || !listener->get_handle())
@@ -386,15 +374,15 @@ void VAWorld::on_reverb_updated()
 
         if (relative_direction)
         {
-            // Matches VAWorldReverbDimension.cs's ApplyGroupedEAXPan
-            Vector3 pan = CalculateListenerRelativePan2D(*relative_direction, listener->get_global_rotation());
+            // Matches VAWorldReverbDimension.cs's ApplyGroupedEAXPan. The SDK returns listener space (X+ right, Y+ forward), and EFX pan is X+ right, Z+ forward
+            VAVector pan = vaWorldCalculateListenerRelativePan(world, *relative_direction, listener->get_global_rotation());
 
             params.reflectionsPan[0] = pan.x;
-            params.reflectionsPan[1] = pan.y;
-            params.reflectionsPan[2] = pan.z;
+            params.reflectionsPan[1] = 0.0f;
+            params.reflectionsPan[2] = pan.y;
             params.lateReverbPan[0] = pan.x;
-            params.lateReverbPan[1] = pan.y;
-            params.lateReverbPan[2] = pan.z;
+            params.lateReverbPan[1] = 0.0f;
+            params.lateReverbPan[2] = pan.y;
         }
 
         grouped_reverb_effects[i]->set_params(params);
