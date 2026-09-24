@@ -60,10 +60,11 @@ bool on_sync_viewport_camera(const Array &data)
     if (!va_world || !va_world->get_sync_viewport() || !va_world->get_handle() || !va_world->get_rendering_enabled())
         return true;
 
-    // position (data[0]) isn't sent to the native SDK - 2D has no vaWorldSetCameraPosition, only rotation/zoom.
+    Vector2 centre = data[0];
     float rotation = data[1];
     float zoom = data[2];
 
+    vaWorldSetCameraPosition(va_world->get_handle(), vaVectorCreate(centre.x, centre.y));
     vaWorldSetCameraRotation(va_world->get_handle(), rotation);
     vaWorldSetCameraZoom(va_world->get_handle(), zoom);
 

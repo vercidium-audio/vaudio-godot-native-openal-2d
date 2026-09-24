@@ -30,9 +30,8 @@ public:
         float flat_transmission_lf, float flat_transmission_hf, const Color &color);
 
     // Relays the editor's viewport camera transform to every active game session, polled every frame by VAWorld's
-    // sync_viewport property via Engine::get_singleton. 2D has no yaw/pitch/FOV - just a screen-space centre position,
-    // a single rotation angle, and a uniform zoom scale, matching vaWorldSetCameraRotation/vaWorldSetCameraZoom's
-    // shape (there is no vaWorldSetCameraPosition in the 2D native SDK at all).
+    // sync_viewport property via Engine::get_singleton. 2D has no yaw/pitch/FOV - just a world-space view centre,
+    // a single rotation angle, and a uniform zoom scale (pixels per unit), matching vaWorldSetCameraPosition/Rotation/Zoom.
     void sync_viewport_camera(const Vector2 &position, float rotation, float zoom);
 };
 

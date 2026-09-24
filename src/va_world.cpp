@@ -1,8 +1,9 @@
 #include "va_world.h"
 
-#include <godot_cpp/classes/camera2d.hpp>
+#include <godot_cpp/classes/display_server.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/scene_tree.hpp>
 #include <godot_cpp/classes/sub_viewport.hpp>
 #include <godot_cpp/classes/window.hpp>
@@ -291,9 +292,8 @@ void VAWorld::send_viewport_camera_to_running_game()
         return;
 
     SubViewport *viewport = EditorInterface::get_singleton()->get_editor_viewport_2d();
-    Camera2D *camera = viewport ? viewport->get_camera_2d() : nullptr;
 
-    if (!camera)
+    if (!viewport)
         return;
 
     Object *singleton_object = Engine::get_singleton()->get_singleton(VAConversionPlugin::DEBUGGER_BRIDGE_SINGLETON_NAME);
@@ -303,8 +303,28 @@ void VAWorld::send_viewport_camera_to_running_game()
     if (!debugger_plugin)
         return;
 
-    // Camera2D::get_zoom() is a Vector2, but vaWorldSetCameraZoom takes a single uniform scale - x and y only differ under non-uniform zoom, which vaudio's 2D camera sync doesn't support.
-    debugger_plugin->sync_viewport_camera(camera->get_global_position(), camera->get_global_rotation(), camera->get_zoom().x);
+    // The 2D editor has no Camera2D - it pans/zooms by setting the viewport's global canvas transform, so invert that to get the world-space view centre. Matches VAWorldDebugger.cs in the Mono addon.
+    Transform2D canvas = viewport->get_global_canvas_transform();
+    Transform2D view = canvas.affine_inverse();
+
+    Vector2 centre = view.xform(viewport->get_visible_rect().size / 2.0f);
+
+    // Canvas scale is in physical pixels, but the debug window's zoom is in logical pixels (framebuffer / GLFW content scale)
+    float zoom = canvas.get_scale().x / get_screen_content_scale();
+
+    debugger_plugin->sync_viewport_camera(centre, view.get_rotation(), zoom);
+}
+
+// Matches GLFW's glfwGetWindowContentScale. Windows' screen_get_scale always returns 1, so derive it from the effective monitor DPI instead
+float VAWorld::get_screen_content_scale()
+{
+    DisplayServer *display_server = DisplayServer::get_singleton();
+
+    float scale = OS::get_singleton()->get_name() == "Windows"
+        ? display_server->screen_get_dpi() / 96.0f
+        : display_server->screen_get_scale();
+
+    return scale > 0.0f ? scale : 1.0f;
 }
 
 // Converts a relative direction (vaudio's internal Y-up space, not Godot's Y-down) into an EFX reverb pan vector, which is left-handed listener space (+X right, +Z forward). Godot's clockwise-positive rotation is counter-clockwise in Y-up space, so rotating by +rotation undoes it.

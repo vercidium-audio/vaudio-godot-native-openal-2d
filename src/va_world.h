@@ -93,6 +93,7 @@ private:
 
     // Editor-only: relays the 2D editor viewport's camera transform/zoom to every active game session, polled from _process while IS_EDITOR_HINT() via sync_viewport.
     void send_viewport_camera_to_running_game();
+    static float get_screen_content_scale();
 
     // Reports unknown material metadata strings when in the editor, not used at runtime.
     void validate_materials_in_editor(Node *node);
