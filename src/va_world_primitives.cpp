@@ -344,6 +344,9 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
         vaPolygonPrimitiveSetScale(p, ToVAudio(scale));
         vaPolygonPrimitiveSetEnclosed(p, false);
 
+        // An open polyline has zero thickness, so distance-based transmission through it is always zero - same reason LinePrimitive always uses flat transmission
+        vaPolygonPrimitiveSetUseFlatTransmission(p, true);
+
         VAResult add_result = vaWorldAddPrimitive_(world, p);
         if (add_result != VA_SUCCESS)
         {
@@ -375,6 +378,34 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
     ref->watcher = watcher;
 
     collision_shape->set_meta(PrimitiveMetaKey(), ref);
+}
+
+// Port of IsConcave in VAWorldPrimitives.cs - concave polygons use flat transmission
+static bool IsConcave(const std::vector<VAVector> &points)
+{
+    int sign = 0;
+    size_t count = points.size();
+
+    for (size_t i = 0; i < count; i++)
+    {
+        const VAVector &a = points[i];
+        const VAVector &b = points[(i + 1) % count];
+        const VAVector &c = points[(i + 2) % count];
+
+        float cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+
+        if (cross == 0)
+            continue;
+
+        int s = cross > 0 ? 1 : -1;
+
+        if (sign == 0)
+            sign = s;
+        else if (s != sign)
+            return true;
+    }
+
+    return false;
 }
 
 void VAWorld::create_primitive(Polygon2D *polygon, VAMaterialType material, bool use_flat_transmission)
@@ -419,7 +450,7 @@ void VAWorld::create_primitive(Polygon2D *polygon, VAMaterialType material, bool
     vaPolygonPrimitiveSetRotation(prim, rotation);
     vaPolygonPrimitiveSetScale(prim, ToVAudio(scale));
     vaPolygonPrimitiveSetEnclosed(prim, true);
-    vaPolygonPrimitiveSetUseFlatTransmission(prim, use_flat_transmission);
+    vaPolygonPrimitiveSetUseFlatTransmission(prim, use_flat_transmission || IsConcave(points));
 
     VAResult add_result = vaWorldAddPrimitive_(world, prim);
     if (add_result != VA_SUCCESS)
@@ -509,8 +540,9 @@ void VAWorld::create_primitive(Line2D *line, VAMaterialType material)
     vaPolygonPrimitiveSetRotation(prim, rotation);
     vaPolygonPrimitiveSetScale(prim, ToVAudio(scale));
 
-    // A Line2D is an open polyline, never a closed loop.
+    // A Line2D is an open polyline, never a closed loop. It has zero thickness, so it needs flat transmission to block anything
     vaPolygonPrimitiveSetEnclosed(prim, false);
+    vaPolygonPrimitiveSetUseFlatTransmission(prim, true);
 
     VAResult add_result = vaWorldAddPrimitive_(world, prim);
     if (add_result != VA_SUCCESS)
