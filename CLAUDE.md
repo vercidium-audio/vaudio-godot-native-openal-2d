@@ -22,7 +22,7 @@ macOS is Apple Silicon (arm64) only - the vendored `libopenal.1.dylib` is arm64,
 
 `vaudio-debug-window` renders the raytracing simulation to a separate window. It only ships in vaudio's `dev` package, not `production`, so the build scripts only copy it into `bin/` if it exists. Confirm the 2D native SDK actually produces a `dev`/debug-window build before assuming parity with the 3D plugin here - see the sibling `vaudio` repo's root CLAUDE.md.
 
-This is the 2D counterpart to `vaudio-godot-native-openal-3d-source`, which is the closest precedent to draw from when porting functionality. `vaudio-godot-mono-openal-2d` (the existing Mono/C# 2D plugin) is the reference for which primitive node types, world properties and behavioural quirks are 2D-specific vs shared.
+This is the 2D counterpart to `vaudio-godot-native-openal-3d`, which is the closest precedent to draw from when porting functionality. `vaudio-godot-mono-openal-2d` (the existing Mono/C# 2D plugin) is the reference for which primitive node types, world properties and behavioural quirks are 2D-specific vs shared.
 
 # C++ code style
 
