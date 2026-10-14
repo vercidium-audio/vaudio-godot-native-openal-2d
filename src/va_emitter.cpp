@@ -1,6 +1,7 @@
 #include "va_emitter.h"
 
 #include "va_engine_util.h"
+#include "va_visualisation.h"
 
 // The rest of VAEmitter is dimension-agnostic and lives in common/va_emitter.cpp.
 
@@ -26,6 +27,18 @@ void VAEmitter::_draw()
 
     draw_circle(Vector2(), VA_EMITTER_GIZMO_RADIUS, VA_EMITTER_GIZMO_COLOR);
     draw_arc(Vector2(), VA_EMITTER_GIZMO_RADIUS, 0.0f, Math_TAU, 24, Color(VA_EMITTER_GIZMO_COLOR, 1.0f), 1.5f);
+}
+
+void VAEmitter::initialize_visualisation()
+{
+    if (visualisation)
+        visualisation->initialize_visualisation();
+}
+
+void VAEmitter::teardown_visualisation()
+{
+    if (visualisation)
+        visualisation->teardown_visualisation();
 }
 
 } // namespace va_godot
