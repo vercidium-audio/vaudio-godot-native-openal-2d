@@ -389,7 +389,8 @@ void VAWorld::on_reverb_updated()
         if (relative_direction)
         {
             // Matches VAWorldReverbDimension.cs's ApplyGroupedEAXPan. The SDK returns listener space (X+ right, Y+ forward), and EFX pan is X+ right, Z+ forward
-            VAVector pan = vaWorldCalculateListenerRelativePan(world, *relative_direction, listener->get_global_rotation());
+            VAVector pan = {};
+            vaWorldCalculateListenerRelativePan(world, *relative_direction, listener->get_global_rotation(), &pan);
 
             params.reflectionsPan[0] = pan.x;
             params.reflectionsPan[1] = 0.0f;
