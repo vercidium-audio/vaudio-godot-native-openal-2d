@@ -253,6 +253,12 @@ public:
     }
     void set_bounds_color(Color value);
 
+    String get_world_name() const
+    {
+        return world_name;
+    }
+    void set_world_name(const String &value);
+
     float get_epsilon() const
     {
         return epsilon;
@@ -357,6 +363,9 @@ public:
 private:
     Vector2 bounds_size = Vector2(200, 200);
     Color bounds_color = Color(0.0f, 0.0f, 0.0f, 0.25f);
+    // Empty means the node's own name is used
+    String world_name;
+    void apply_world_name();
     float epsilon = 0.01f;
     // A collider only inherits a cascading material if its body's collision layer is in this mask. A collider with its own material is always included. 0xFFFFF = all 20 layers. Unlike 3D, there is no render_layers - visuals are never filtered by layer mask in 2D.
     uint32_t collision_layers = 0xFFFFF;
