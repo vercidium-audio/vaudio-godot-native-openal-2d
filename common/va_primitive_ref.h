@@ -31,4 +31,7 @@ public:
     // Only set for CollisionShape nodes - the Shape resource whose changed signal is connected to shape_callable, so remove_primitive can disconnect it
     Ref<Resource> shape_resource;
     Callable shape_callable;
+
+    // 3D only - the VAWorld::SharedMesh this mesh primitive was created from, released in remove_primitive
+    void *shared_mesh = nullptr;
 };
