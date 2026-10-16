@@ -28,6 +28,7 @@ public:
     VAPrimitiveKind kind; // always set explicitly at construction, no sensible dimension-neutral default
     TransformWatcher *watcher = nullptr;
 
-    // Only set for CollisionShape nodes whose Shape resource can itself change; not currently wired up, kept for parity with the C# field.
+    // Only set for CollisionShape nodes - the Shape resource whose changed signal is connected to shape_callable, so remove_primitive can disconnect it
     Ref<Resource> shape_resource;
+    Callable shape_callable;
 };

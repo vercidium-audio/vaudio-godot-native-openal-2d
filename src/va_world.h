@@ -128,6 +128,7 @@ private:
     void create_primitive(Line2D *line, VAMaterialType material);
 
     void update_collision_shape_primitive(CollisionShape2D *collision_shape, VAPrimitiveRef *ref);
+    void on_collision_shape_changed(CollisionShape2D *collision_shape);
 
 protected:
     static void _bind_methods();
