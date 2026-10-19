@@ -653,7 +653,7 @@ VAPolygonPrimitive *VAWorld::create_shared_polygon_primitive(const Ref<Resource>
     shared_polygon->reference_count++;
 
     VAPolygonPrimitive *prim = nullptr;
-    VAResult create_result = vaPolygonPrimitiveCreate(shared_polygon->polygon, &prim);
+    VAResult create_result = vaPolygonPrimitiveCreateFromPolygon(shared_polygon->polygon, &prim);
     if (create_result != VA_SUCCESS)
     {
         VA_ERROR(
