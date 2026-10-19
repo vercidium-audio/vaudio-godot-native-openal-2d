@@ -130,6 +130,24 @@ private:
     void update_collision_shape_primitive(CollisionShape2D *collision_shape, VAPrimitiveRef *ref);
     void on_collision_shape_changed(CollisionShape2D *collision_shape);
 
+    // A VAPolygon built once per Godot Shape2D resource and shared by every polygon primitive created from it. Polygon2D/Line2D points live on the node rather than a resource, so they have a null resource and are never shared
+    struct SharedPolygon
+    {
+        ::VAPolygon *polygon = nullptr;
+        Ref<Resource> resource;
+        int reference_count = 0;
+    };
+
+    // Keyed by the resource's instance id
+    std::unordered_map<uint64_t, SharedPolygon *> shared_polygons;
+
+    // read_points is only called if the resource doesn't have a shared polygon yet. Returns nullptr if it has fewer than 3 points or creation failed
+    VAPolygonPrimitive *create_shared_polygon_primitive(const Ref<Resource> &resource, std::function<std::vector<VAVector>()> read_points, Node *node, SharedPolygon *&out_shared_polygon);
+    void release_shared_polygon(SharedPolygon *shared_polygon);
+
+    // Stops new primitives reusing this shared polygon, e.g. after its Shape2D changed. Existing primitives keep it until they're removed
+    void invalidate_shared_polygon(SharedPolygon *shared_polygon);
+
 protected:
     static void _bind_methods();
 
