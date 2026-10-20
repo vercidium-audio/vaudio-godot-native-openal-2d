@@ -90,6 +90,7 @@ private:
     bool pending_shutdown = false;
     int raytrace_count = 0;
     bool rendering_enabled = true;
+    float visualisation_scale = 1.0f;
     bool sync_viewport = true;
 
     void init_scene();
@@ -236,6 +237,19 @@ public:
 
         if (world)
             vaWorldSetRenderingEnabled(world, value);
+    }
+
+    float get_visualisation_scale() const
+    {
+        return visualisation_scale;
+    }
+
+    void set_visualisation_scale(float value)
+    {
+        visualisation_scale = value;
+
+        if (world)
+            vaWorldSetVisualisationScale(world, value);
     }
 
     bool get_sync_viewport() const
