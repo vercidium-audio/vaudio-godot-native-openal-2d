@@ -9,6 +9,7 @@
 #include <godot_cpp/variant/typed_array.hpp>
 
 #include "va_debugger_plugin.h"
+#include "va_hrtf_export_plugin.h"
 #include "va_material_inspector_plugin.h"
 #include "va_material_properties_inspector_plugin.h"
 
@@ -74,6 +75,7 @@ private:
     Ref<VAMaterialInspectorPlugin> material_inspector_plugin;
     Ref<VAMaterialPropertiesInspectorPlugin> material_properties_inspector_plugin;
     Ref<VADebuggerPlugin> debugger_plugin;
+    Ref<VAHRTFExportPlugin> hrtf_export_plugin;
     VADebuggerBridge *debugger_bridge = nullptr;
 
     void refresh_output_device_setting();
