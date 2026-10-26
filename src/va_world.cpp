@@ -15,6 +15,7 @@
 #include "openal/al_manager.h"
 #include "va_conversion_plugin.h"
 #include "va_conversions.h"
+#include "va_debug_window_check.h"
 #include "va_debugger_plugin.h"
 #include "va_emitter.h"
 #include "va_engine_util.h"
@@ -164,6 +165,7 @@ VAWorld::VAWorld()
         return;
 
     world = vaWorldCreate();
+    warn_if_debug_window_not_executable();
 
     // These three calls are guaranteed to pass, no need to check result.
     vaWorldSetCoordinateSystem(world, VACoordinateSystemGodot2D);
