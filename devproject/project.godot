@@ -21,3 +21,7 @@ config/features=PackedStringArray("4.7")
 [dotnet]
 
 project/assembly_name="vaudio-godot-native-openal-2d test project"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/vaudio-godot-native-openal-2d/plugin.cfg")

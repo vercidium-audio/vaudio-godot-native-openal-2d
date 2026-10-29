@@ -5,7 +5,7 @@ enum class VAPrimitiveKind
 {
     Box,
     Circle,
-    Oval,
+    Capsule,
     Line,
     Polygon,
 };

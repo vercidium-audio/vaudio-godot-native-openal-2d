@@ -15,6 +15,8 @@
 #include <godot_cpp/variant/callable_method_pointer.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
+#include <algorithm>
+
 #include "va_conversions.h"
 #include "va_engine_util.h"
 
@@ -69,6 +71,12 @@ static void ComputeWorldBoundaryLine(const Ref<WorldBoundaryShape2D> &world_boun
     out_end = origin + along * half;
 }
 
+// Godot's capsule height includes both caps, whereas vaudio's length is just the straight body between them
+static float CapsuleBodyLength(const Ref<CapsuleShape2D> &capsule, const Vector2 &scale)
+{
+    return std::max(capsule->get_height() * scale.y - 2.0f * capsule->get_radius() * scale.x, 0.0f);
+}
+
 void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType material)
 {
     if (collision_shape->has_meta(PrimitiveMetaKey()))
@@ -91,6 +99,7 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
 
     void *prim = nullptr;
     VAPrimitiveKind kind;
+    SharedPolygon *shared_polygon = nullptr;
 
     if (Ref<RectangleShape2D> rect = shape; rect.is_valid())
     {
@@ -151,10 +160,9 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
     }
     else if (Ref<CapsuleShape2D> capsule = shape; capsule.is_valid())
     {
-        // TODO - make a capsule primitive in 2D; approximated with an oval, matching VAWorldPrimitives.cs.
-        VAOvalPrimitive *p = vaOvalPrimitiveCreate();
+        VACapsulePrimitive *p = vaCapsulePrimitiveCreate();
 
-        VAResult material_result = vaOvalPrimitiveSetMaterial(p, material);
+        VAResult material_result = vaCapsulePrimitiveSetMaterial(p, material);
         if (material_result != VA_SUCCESS)
         {
             VA_ERROR(
@@ -162,10 +170,10 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
                 collision_shape->get_name(), "' (VAResult=", VAResultToString(material_result), ")");
         }
 
-        vaOvalPrimitiveSetCenter(p, position);
-        vaOvalPrimitiveSetRadiusX(p, capsule->get_radius() * scale.x);
-        vaOvalPrimitiveSetRadiusY(p, (capsule->get_height() / 2.0f) * scale.y);
-        vaOvalPrimitiveSetRotation(p, rotation);
+        vaCapsulePrimitiveSetCenter(p, position);
+        vaCapsulePrimitiveSetRadius(p, capsule->get_radius() * scale.x);
+        vaCapsulePrimitiveSetLength(p, CapsuleBodyLength(capsule, scale));
+        vaCapsulePrimitiveSetRotation(p, rotation);
 
         VAResult add_result = vaWorldAddPrimitive_(world, p);
         if (add_result != VA_SUCCESS)
@@ -173,12 +181,12 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
             VA_ERROR(
                 "VAWorld::create_primitive(CollisionShape2D capsule) failed to add '",
                 collision_shape->get_name(), "' to the world (VAResult=", VAResultToString(add_result), ")");
-            vaOvalPrimitiveDestroy(p);
+            vaCapsulePrimitiveDestroy(p);
             return;
         }
 
         prim = p;
-        kind = VAPrimitiveKind::Oval;
+        kind = VAPrimitiveKind::Capsule;
     }
     else if (Ref<SegmentShape2D> segment = shape; segment.is_valid())
     {
@@ -269,22 +277,13 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
     }
     else if (Ref<ConvexPolygonShape2D> convex_polygon = shape; convex_polygon.is_valid())
     {
-        std::vector<VAVector> points = ConvertPolygonToVAudio(convex_polygon->get_points());
-
-        if ((int)points.size() < 3)
+        VAPolygonPrimitive *p = create_shared_polygon_primitive(convex_polygon, [&]()
         {
-            return;
-        }
+            return ConvertPolygonToVAudio(convex_polygon->get_points());
+        }, collision_shape, shared_polygon);
 
-        VAPolygonPrimitive *p = nullptr;
-        VAResult create_result = vaPolygonPrimitiveCreate(points.data(), (int)points.size(), &p);
-        if (create_result != VA_SUCCESS)
-        {
-            VA_ERROR(
-                "VAWorld::create_primitive(CollisionShape2D convex polygon) failed to create the polygon primitive for '",
-                collision_shape->get_name(), "' (VAResult=", VAResultToString(create_result), ")");
+        if (!p)
             return;
-        }
 
         VAResult material_result = vaPolygonPrimitiveSetMaterial(p, material);
         if (material_result != VA_SUCCESS)
@@ -299,6 +298,9 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
         vaPolygonPrimitiveSetScale(p, ToVAudio(scale));
         vaPolygonPrimitiveSetEnclosed(p, true);
 
+        // PolygonPrimitive defaults to flat transmission, but a convex polygon is a closed solid with real thickness
+        vaPolygonPrimitiveSetUseFlatTransmission(p, false);
+
         VAResult add_result = vaWorldAddPrimitive_(world, p);
         if (add_result != VA_SUCCESS)
         {
@@ -306,6 +308,7 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
                 "VAWorld::create_primitive(CollisionShape2D convex polygon) failed to add '",
                 collision_shape->get_name(), "' to the world (VAResult=", VAResultToString(add_result), ")");
             vaPolygonPrimitiveDestroy(p);
+            release_shared_polygon(shared_polygon);
             return;
         }
 
@@ -314,22 +317,13 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
     }
     else if (Ref<ConcavePolygonShape2D> concave_polygon = shape; concave_polygon.is_valid())
     {
-        std::vector<VAVector> points = ConvertPolygonToVAudio(concave_polygon->get_segments());
-
-        if ((int)points.size() < 3)
+        VAPolygonPrimitive *p = create_shared_polygon_primitive(concave_polygon, [&]()
         {
-            return;
-        }
+            return ConvertPolygonToVAudio(concave_polygon->get_segments());
+        }, collision_shape, shared_polygon);
 
-        VAPolygonPrimitive *p = nullptr;
-        VAResult create_result = vaPolygonPrimitiveCreate(points.data(), (int)points.size(), &p);
-        if (create_result != VA_SUCCESS)
-        {
-            VA_ERROR(
-                "VAWorld::create_primitive(CollisionShape2D concave polygon) failed to create the polygon primitive for '",
-                collision_shape->get_name(), "' (VAResult=", VAResultToString(create_result), ")");
+        if (!p)
             return;
-        }
 
         VAResult material_result = vaPolygonPrimitiveSetMaterial(p, material);
         if (material_result != VA_SUCCESS)
@@ -354,6 +348,7 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
                 "VAWorld::create_primitive(CollisionShape2D concave polygon) failed to add '",
                 collision_shape->get_name(), "' to the world (VAResult=", VAResultToString(add_result), ")");
             vaPolygonPrimitiveDestroy(p);
+            release_shared_polygon(shared_polygon);
             return;
         }
 
@@ -368,6 +363,7 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
     VAPrimitiveRef *ref = memnew(VAPrimitiveRef);
     ref->primitive = prim;
     ref->kind = kind;
+    ref->shared_geometry = shared_polygon;
 
     TransformWatcher *watcher = memnew(TransformWatcher);
     watcher->set_on_transform_changed([this, collision_shape, ref]()
@@ -377,7 +373,38 @@ void VAWorld::create_primitive(CollisionShape2D *collision_shape, VAMaterialType
     collision_shape->add_child(watcher);
     ref->watcher = watcher;
 
+    // Editing the shape resource (size, radius, points etc) doesn't move the node, so the watcher won't see it
+    ref->shape_resource = shape;
+    ref->on_shape_changed = [this, collision_shape]()
+    {
+        on_collision_shape_changed(collision_shape);
+    };
+    ref->shape_callable = callable_mp(ref, &VAPrimitiveRef::shape_changed);
+    shape->connect("changed", ref->shape_callable);
+
     collision_shape->set_meta(PrimitiveMetaKey(), ref);
+}
+
+void VAWorld::on_collision_shape_changed(CollisionShape2D *collision_shape)
+{
+    if (!collision_shape || !collision_shape->has_meta(PrimitiveMetaKey()))
+        return;
+
+    // Held locally so the ref outlives remove_primitive clearing the meta below
+    Ref<VAPrimitiveRef> ref = collision_shape->get_meta(PrimitiveMetaKey());
+    if (ref.is_null())
+        return;
+
+    // Polygon points are baked into the shared polygon when it's created, so recreate it from scratch. Every node using this shape gets the changed signal, the first one invalidates the stale shared polygon and the rest pick up its replacement
+    if (ref->kind == VAPrimitiveKind::Polygon)
+    {
+        VAMaterialType material = vaPolygonPrimitiveGetMaterial((VAPolygonPrimitive *)ref->primitive);
+        invalidate_shared_polygon((SharedPolygon *)ref->shared_geometry);
+        remove_primitive(collision_shape, false);
+        create_primitive(collision_shape, material);
+    }
+    else
+        update_collision_shape_primitive(collision_shape, ref.ptr());
 }
 
 // Port of IsConcave in VAWorldPrimitives.cs - concave polygons use flat transmission
@@ -428,15 +455,14 @@ void VAWorld::create_primitive(Polygon2D *polygon, VAMaterialType material, bool
     Vector2 scale;
     Decompose(polygon->get_global_transform(), position, rotation, scale);
 
-    VAPolygonPrimitive *prim = nullptr;
-    VAResult create_result = vaPolygonPrimitiveCreate(points.data(), (int)points.size(), &prim);
-    if (create_result != VA_SUCCESS)
+    SharedPolygon *shared_polygon = nullptr;
+    VAPolygonPrimitive *prim = create_shared_polygon_primitive(Ref<Resource>(), [&]()
     {
-        VA_ERROR(
-            "VAWorld::create_primitive(Polygon2D) failed to create the polygon primitive for '",
-            polygon->get_name(), "' (VAResult=", VAResultToString(create_result), ")");
+        return points;
+    }, polygon, shared_polygon);
+
+    if (!prim)
         return;
-    }
 
     VAResult material_result = vaPolygonPrimitiveSetMaterial(prim, material);
     if (material_result != VA_SUCCESS)
@@ -459,6 +485,7 @@ void VAWorld::create_primitive(Polygon2D *polygon, VAMaterialType material, bool
             "VAWorld::create_primitive(Polygon2D) failed to add '",
             polygon->get_name(), "' to the world (VAResult=", VAResultToString(add_result), ")");
         vaPolygonPrimitiveDestroy(prim);
+        release_shared_polygon(shared_polygon);
         return;
     }
 
@@ -495,6 +522,7 @@ void VAWorld::create_primitive(Polygon2D *polygon, VAMaterialType material, bool
         }
     });
 
+    ref->shared_geometry = shared_polygon;
     polygon->set_meta(PrimitiveMetaKey(), ref);
 }
 
@@ -518,15 +546,14 @@ void VAWorld::create_primitive(Line2D *line, VAMaterialType material)
     Vector2 scale;
     Decompose(line->get_global_transform(), position, rotation, scale);
 
-    VAPolygonPrimitive *prim = nullptr;
-    VAResult create_result = vaPolygonPrimitiveCreate(points.data(), (int)points.size(), &prim);
-    if (create_result != VA_SUCCESS)
+    SharedPolygon *shared_polygon = nullptr;
+    VAPolygonPrimitive *prim = create_shared_polygon_primitive(Ref<Resource>(), [&]()
     {
-        VA_ERROR(
-            "VAWorld::create_primitive(Line2D) failed to create the polygon primitive for '",
-            line->get_name(), "' (VAResult=", VAResultToString(create_result), ")");
+        return points;
+    }, line, shared_polygon);
+
+    if (!prim)
         return;
-    }
 
     VAResult material_result = vaPolygonPrimitiveSetMaterial(prim, material);
     if (material_result != VA_SUCCESS)
@@ -551,6 +578,7 @@ void VAWorld::create_primitive(Line2D *line, VAMaterialType material)
             "VAWorld::create_primitive(Line2D) failed to add '",
             line->get_name(), "' to the world (VAResult=", VAResultToString(add_result), ")");
         vaPolygonPrimitiveDestroy(prim);
+        release_shared_polygon(shared_polygon);
         return;
     }
 
@@ -587,7 +615,86 @@ void VAWorld::create_primitive(Line2D *line, VAMaterialType material)
         }
     });
 
+    ref->shared_geometry = shared_polygon;
     line->set_meta(PrimitiveMetaKey(), ref);
+}
+
+VAPolygonPrimitive *VAWorld::create_shared_polygon_primitive(const Ref<Resource> &resource, std::function<std::vector<VAVector>()> read_points, Node *node, SharedPolygon *&out_shared_polygon)
+{
+    out_shared_polygon = nullptr;
+
+    SharedPolygon *shared_polygon;
+    auto it = resource.is_valid() ? shared_polygons.find(resource->get_instance_id()) : shared_polygons.end();
+
+    if (it != shared_polygons.end())
+    {
+        shared_polygon = it->second;
+    }
+    else
+    {
+        std::vector<VAVector> points = read_points();
+
+        if ((int)points.size() < 3)
+            return nullptr;
+
+        ::VAPolygon *polygon = nullptr;
+        VAResult polygon_result = vaPolygonCreate(points.data(), (int)points.size(), &polygon);
+        if (polygon_result != VA_SUCCESS)
+        {
+            VA_ERROR(
+                "VAWorld::create_shared_polygon_primitive failed to create the polygon for '",
+                node->get_name(), "' (VAResult=", VAResultToString(polygon_result), ")");
+            return nullptr;
+        }
+
+        shared_polygon = new SharedPolygon{ polygon, resource, 0 };
+
+        if (resource.is_valid())
+            shared_polygons[resource->get_instance_id()] = shared_polygon;
+    }
+
+    // Counted before creating the primitive, so release_shared_polygon cleans up a polygon that was created above if this fails
+    shared_polygon->reference_count++;
+
+    VAPolygonPrimitive *prim = nullptr;
+    VAResult create_result = vaPolygonPrimitiveCreateFromPolygon(shared_polygon->polygon, &prim);
+    if (create_result != VA_SUCCESS)
+    {
+        VA_ERROR(
+            "VAWorld::create_shared_polygon_primitive failed to create the polygon primitive for '",
+            node->get_name(), "' (VAResult=", VAResultToString(create_result), ")");
+        release_shared_polygon(shared_polygon);
+        return nullptr;
+    }
+
+    out_shared_polygon = shared_polygon;
+    return prim;
+}
+
+void VAWorld::release_shared_polygon(SharedPolygon *shared_polygon)
+{
+    if (!shared_polygon || --shared_polygon->reference_count > 0)
+        return;
+
+    invalidate_shared_polygon(shared_polygon);
+
+    VAResult destroy_result = vaPolygonDestroy(shared_polygon->polygon);
+    if (destroy_result != VA_SUCCESS)
+        VA_ERROR("VAWorld::release_shared_polygon failed to destroy a polygon (VAResult=", VAResultToString(destroy_result), ")");
+
+    delete shared_polygon;
+}
+
+void VAWorld::invalidate_shared_polygon(SharedPolygon *shared_polygon)
+{
+    if (!shared_polygon || shared_polygon->resource.is_null())
+        return;
+
+    // Only erase it if it's still the current entry, since an earlier invalidation may have already replaced it
+    auto it = shared_polygons.find(shared_polygon->resource->get_instance_id());
+
+    if (it != shared_polygons.end() && it->second == shared_polygon)
+        shared_polygons.erase(it);
 }
 
 void VAWorld::update_collision_shape_primitive(CollisionShape2D *collision_shape, VAPrimitiveRef *ref)
@@ -656,12 +763,12 @@ void VAWorld::update_collision_shape_primitive(CollisionShape2D *collision_shape
             }
             break;
         }
-        case VAPrimitiveKind::Oval:
+        case VAPrimitiveKind::Capsule:
         {
-            VAOvalPrimitive *p = (VAOvalPrimitive *)ref->primitive;
+            VACapsulePrimitive *p = (VACapsulePrimitive *)ref->primitive;
             Ref<CapsuleShape2D> capsule = shape;
 
-            VAResult center_result = vaOvalPrimitiveSetCenter(p, position);
+            VAResult center_result = vaCapsulePrimitiveSetCenter(p, position);
             if (center_result != VA_SUCCESS && center_result != VA_UNCHANGED)
             {
                 VA_ERROR(
@@ -669,23 +776,23 @@ void VAWorld::update_collision_shape_primitive(CollisionShape2D *collision_shape
                     collision_shape->get_name(), "' (VAResult=", VAResultToString(center_result), ")");
             }
 
-            VAResult radius_x_result = vaOvalPrimitiveSetRadiusX(p, capsule->get_radius() * scale.x);
-            if (radius_x_result != VA_SUCCESS && radius_x_result != VA_UNCHANGED)
+            VAResult radius_result = vaCapsulePrimitiveSetRadius(p, capsule->get_radius() * scale.x);
+            if (radius_result != VA_SUCCESS && radius_result != VA_UNCHANGED)
             {
                 VA_ERROR(
-                    "VAWorld::update_collision_shape_primitive(capsule) failed to update radiusX for '",
-                    collision_shape->get_name(), "' (VAResult=", VAResultToString(radius_x_result), ")");
+                    "VAWorld::update_collision_shape_primitive(capsule) failed to update radius for '",
+                    collision_shape->get_name(), "' (VAResult=", VAResultToString(radius_result), ")");
             }
 
-            VAResult radius_y_result = vaOvalPrimitiveSetRadiusY(p, (capsule->get_height() / 2.0f) * scale.y);
-            if (radius_y_result != VA_SUCCESS && radius_y_result != VA_UNCHANGED)
+            VAResult length_result = vaCapsulePrimitiveSetLength(p, CapsuleBodyLength(capsule, scale));
+            if (length_result != VA_SUCCESS && length_result != VA_UNCHANGED)
             {
                 VA_ERROR(
-                    "VAWorld::update_collision_shape_primitive(capsule) failed to update radiusY for '",
-                    collision_shape->get_name(), "' (VAResult=", VAResultToString(radius_y_result), ")");
+                    "VAWorld::update_collision_shape_primitive(capsule) failed to update length for '",
+                    collision_shape->get_name(), "' (VAResult=", VAResultToString(length_result), ")");
             }
 
-            VAResult rotation_result = vaOvalPrimitiveSetRotation(p, rotation);
+            VAResult rotation_result = vaCapsulePrimitiveSetRotation(p, rotation);
             if (rotation_result != VA_SUCCESS && rotation_result != VA_UNCHANGED)
             {
                 VA_ERROR(
@@ -849,6 +956,9 @@ void VAWorld::remove_primitive(Node *node, bool recursive)
                 ref->watcher = nullptr;
             }
 
+            if (ref->shape_resource.is_valid() && ref->shape_resource->is_connected("changed", ref->shape_callable))
+                ref->shape_resource->disconnect("changed", ref->shape_callable);
+
             // vaWorldRemovePrimitive_ failing with VA_NOT_ADDED_TO_WORLD means our bookkeeping disagrees with the SDK about this primitive's membership - still proceed to Destroy so we don't leak it, but surface the mismatch.
             switch (ref->kind)
             {
@@ -890,21 +1000,21 @@ void VAWorld::remove_primitive(Node *node, bool recursive)
                     }
                     break;
                 }
-                case VAPrimitiveKind::Oval:
+                case VAPrimitiveKind::Capsule:
                 {
                     VAResult remove_result = vaWorldRemovePrimitive_(world, ref->primitive);
                     if (remove_result != VA_SUCCESS)
                     {
                         VA_ERROR(
-                            "VAWorld::remove_primitive(oval) failed to remove '",
+                            "VAWorld::remove_primitive(capsule) failed to remove '",
                             node->get_name(), "' from the world (VAResult=", VAResultToString(remove_result), ")");
                     }
 
-                    VAResult destroy_result = vaOvalPrimitiveDestroy((VAOvalPrimitive *)ref->primitive);
+                    VAResult destroy_result = vaCapsulePrimitiveDestroy((VACapsulePrimitive *)ref->primitive);
                     if (destroy_result != VA_SUCCESS)
                     {
                         VA_ERROR(
-                            "VAWorld::remove_primitive(oval) failed to destroy '",
+                            "VAWorld::remove_primitive(capsule) failed to destroy '",
                             node->get_name(), "' (VAResult=", VAResultToString(destroy_result), ")");
                     }
                     break;
@@ -945,6 +1055,10 @@ void VAWorld::remove_primitive(Node *node, bool recursive)
                             "VAWorld::remove_primitive(polygon) failed to destroy '",
                             node->get_name(), "' (VAResult=", VAResultToString(destroy_result), ")");
                     }
+
+                    // Must come after the primitive is destroyed, as vaPolygonDestroy fails while a primitive still uses the polygon
+                    release_shared_polygon((SharedPolygon *)ref->shared_geometry);
+                    ref->shared_geometry = nullptr;
                     break;
                 }
             }

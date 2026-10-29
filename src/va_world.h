@@ -17,6 +17,7 @@ extern "C"
 
 #include "openal/al_reverb.h"
 #include "va_conversions.h"
+#include "va_debug_window_check.h"
 #include "va_engine_util.h"
 #include "va_primitive_ref.h"
 
@@ -90,6 +91,7 @@ private:
     bool pending_shutdown = false;
     int raytrace_count = 0;
     bool rendering_enabled = true;
+    float visualisation_scale = 1.0f;
     bool sync_viewport = true;
 
     void init_scene();
@@ -128,6 +130,25 @@ private:
     void create_primitive(Line2D *line, VAMaterialType material);
 
     void update_collision_shape_primitive(CollisionShape2D *collision_shape, VAPrimitiveRef *ref);
+    void on_collision_shape_changed(CollisionShape2D *collision_shape);
+
+    // A VAPolygon built once per Godot Shape2D resource and shared by every polygon primitive created from it. Polygon2D/Line2D points live on the node rather than a resource, so they have a null resource and are never shared
+    struct SharedPolygon
+    {
+        ::VAPolygon *polygon = nullptr;
+        Ref<Resource> resource;
+        int reference_count = 0;
+    };
+
+    // Keyed by the resource's instance id
+    std::unordered_map<uint64_t, SharedPolygon *> shared_polygons;
+
+    // read_points is only called if the resource doesn't have a shared polygon yet. Returns nullptr if it has fewer than 3 points or creation failed
+    VAPolygonPrimitive *create_shared_polygon_primitive(const Ref<Resource> &resource, std::function<std::vector<VAVector>()> read_points, Node *node, SharedPolygon *&out_shared_polygon);
+    void release_shared_polygon(SharedPolygon *shared_polygon);
+
+    // Stops new primitives reusing this shared polygon, e.g. after its Shape2D changed. Existing primitives keep it until they're removed
+    void invalidate_shared_polygon(SharedPolygon *shared_polygon);
 
 protected:
     static void _bind_methods();
@@ -216,7 +237,20 @@ public:
         rendering_enabled = value;
 
         if (world)
-            vaWorldSetRenderingEnabled(world, value);
+            va_godot::error_if_debug_window_missing(vaWorldSetRenderingEnabled(world, value));
+    }
+
+    float get_visualisation_scale() const
+    {
+        return visualisation_scale;
+    }
+
+    void set_visualisation_scale(float value)
+    {
+        visualisation_scale = value;
+
+        if (world)
+            vaWorldSetVisualisationScale(world, value);
     }
 
     bool get_sync_viewport() const
@@ -252,6 +286,12 @@ public:
         return bounds_color;
     }
     void set_bounds_color(Color value);
+
+    String get_world_name() const
+    {
+        return world_name;
+    }
+    void set_world_name(const String &value);
 
     float get_epsilon() const
     {
@@ -357,6 +397,9 @@ public:
 private:
     Vector2 bounds_size = Vector2(200, 200);
     Color bounds_color = Color(0.0f, 0.0f, 0.0f, 0.25f);
+    // Empty means the node's own name is used
+    String world_name;
+    void apply_world_name();
     float epsilon = 0.01f;
     // A collider only inherits a cascading material if its body's collision layer is in this mask. A collider with its own material is always included. 0xFFFFF = all 20 layers. Unlike 3D, there is no render_layers - visuals are never filtered by layer mask in 2D.
     uint32_t collision_layers = 0xFFFFF;
