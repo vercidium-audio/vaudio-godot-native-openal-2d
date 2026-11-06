@@ -32,6 +32,11 @@ void VAWorld::_bind_methods()
     ClassDB::bind_method(D_METHOD("set_position", "value"), &VAWorld::set_position);
     ClassDB::bind_method(D_METHOD("get_bounds_size"), &VAWorld::get_bounds_size);
     ClassDB::bind_method(D_METHOD("set_bounds_size", "value"), &VAWorld::set_bounds_size);
+    ClassDB::bind_method(D_METHOD("get_bounds_position"), &VAWorld::get_bounds_position);
+    ClassDB::bind_method(D_METHOD("get_bounds_follow"), &VAWorld::get_bounds_follow);
+    ClassDB::bind_method(D_METHOD("set_bounds_follow", "value"), &VAWorld::set_bounds_follow);
+    ClassDB::bind_method(D_METHOD("get_bounds_update_distance"), &VAWorld::get_bounds_update_distance);
+    ClassDB::bind_method(D_METHOD("set_bounds_update_distance", "value"), &VAWorld::set_bounds_update_distance);
     ClassDB::bind_method(D_METHOD("get_bounds_color"), &VAWorld::get_bounds_color);
     ClassDB::bind_method(D_METHOD("set_bounds_color", "value"), &VAWorld::set_bounds_color);
     ClassDB::bind_method(D_METHOD("get_world_name"), &VAWorld::get_world_name);
@@ -47,6 +52,8 @@ void VAWorld::_bind_methods()
     ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "position", PROPERTY_HINT_RANGE, "-1000,1000,1,or_less,or_greater"), "set_position", "get_position");
 
     ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "bounds_size", PROPERTY_HINT_RANGE, "1,1000,1,or_greater"), "set_bounds_size", "get_bounds_size");
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "bounds_follow", PROPERTY_HINT_ENUM, "None,Listener"), "set_bounds_follow", "get_bounds_follow");
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "bounds_update_distance", PROPERTY_HINT_RANGE, "0,1000,0.1,or_greater"), "set_bounds_update_distance", "get_bounds_update_distance");
     ADD_PROPERTY(PropertyInfo(Variant::COLOR, "bounds_color"), "set_bounds_color", "get_bounds_color");
     ADD_PROPERTY(PropertyInfo(Variant::STRING, "world_name"), "set_world_name", "get_world_name");
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "epsilon"), "set_epsilon", "get_epsilon");
@@ -215,6 +222,8 @@ void VAWorld::_validate_property(PropertyInfo &p_property) const
 
 void VAWorld::_ready()
 {
+    reclamp_bounds_size();
+
     if (IS_EDITOR_HINT())
     {
         // Scan for unknown vercidium_audio_material values, so warnings appear while editing. get_tree() can be null if this node isn't inside the scene tree yet.
@@ -228,6 +237,10 @@ void VAWorld::_ready()
 
     // The node name isn't known in the constructor, so the fallback name is applied here
     apply_world_name();
+
+    // The scene's position may have loaded after bounds_follow, which ignores it
+    bounds_position = get_position();
+    place_bounds();
 
     // Wait a frame to ensure all children/siblings have been added to the scene.
     callable_mp(this, &VAWorld::init_scene).call_deferred();
@@ -297,6 +310,8 @@ void VAWorld::_process(double delta)
 
     if (world)
     {
+        follow_bounds();
+
         VAResult result = vaWorldUpdate(world);
 
         if (result != VA_SUCCESS && result != VA_STILL_RUNNING)
