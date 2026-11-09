@@ -46,6 +46,13 @@ Vector2 VAWorld::get_bounds_position() const
     return world ? FromVAudio(vaWorldGetPosition(world)) : get_position();
 }
 
+bool VAWorld::is_within_bounds(const Vector2 &position) const
+{
+    Vector2 min = get_bounds_position();
+    Vector2 max = min + bounds_size;
+    return position.x >= min.x && position.y >= min.y && position.x <= max.x && position.y <= max.y;
+}
+
 void VAWorld::set_bounds_follow(int value)
 {
     bounds_follow = value;

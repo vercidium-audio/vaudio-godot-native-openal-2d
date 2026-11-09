@@ -52,6 +52,8 @@ enum class PropagateMode
 // Copies a raw ::VAEAXReverb's fields into an OpenAL-facing VAEAXReverbParams. Defined once in common/va_world_common.cpp since it's dimension-agnostic; declared here so each repo's own va_world.cpp (which computes the listener-relative pan differently) can still call it from on_reverb_updated().
 VAEAXReverbParams CopyReverbParams(const VAEAXReverb *eax);
 
+constexpr const char *MISSING_LISTENER_HINT = "Ensure the VAListener node is created and is a sibling or child node of VAWorld.";
+
 // Name collision: the vaudio C SDK's opaque handle type is also called "VAWorld" (global namespace); inside va_godot, 'VAWorld' means this class and '::VAWorld' the SDK handle.
 // This is a Node2D purely so the editor can draw a gizmo for the bounds_position/bounds_size AABB - the node's own transform is otherwise unused by vaudio.
 class VAWorld : public Node2D
@@ -278,6 +280,9 @@ public:
     // The bounds' minimum corner in the SDK during play, which differs from this node's position while bounds_follow is Listener
     Vector2 get_bounds_position() const;
 
+    // Game-thread box test against the bounds, edges included like the SDK's own test. See VAEmitter::is_outside_bounds for the clamp and emitters_outside_the_world_are_muffled rules
+    bool is_within_bounds(const Vector2 &position) const;
+
     int get_bounds_follow() const
     {
         return bounds_follow;
@@ -380,6 +385,7 @@ public:
     }
     void set_reference_frequency_hf(float value);
 
+    // If true, unclamped sources outside the bounds are fully muffled and stopped: one that doesn't loop isn't started there, and loops and streams play again once back inside. If false, they play unmuffled with no reverb
     bool get_emitters_outside_the_world_are_muffled() const
     {
         return emitters_outside_the_world_are_muffled;
