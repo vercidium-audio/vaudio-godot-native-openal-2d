@@ -48,7 +48,7 @@ scattering_seed = 1303946308
 streams = Array[AudioStream]([ExtResource("1_speech")])
 looping = true
 autoplay = true
-position = Vector2(372, -1)
+position = Vector2(372, 19)
 
 [node name="VAVisualisation" type="VAVisualisation" parent="VASource" unique_id=1644903379]
 
