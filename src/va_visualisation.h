@@ -1,3 +1,5 @@
+// Human-reviewed
+
 #pragma once
 
 #include <godot_cpp/classes/array_mesh.hpp>

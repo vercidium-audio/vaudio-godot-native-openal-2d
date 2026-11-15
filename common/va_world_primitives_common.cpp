@@ -69,7 +69,7 @@ String VAWorld::get_propagate_meta_key()
     return PropagateMetaKey();
 }
 
-PropagateMode VAWorld::read_propagate_filter(Node *node, PropagateMode inherited)
+PropagateMode VAWorld::read_propagate_mode(Node *node, PropagateMode inherited)
 {
     if (!node->has_meta(PropagateMetaKey()))
         return inherited;
@@ -231,10 +231,10 @@ void VAWorld::on_node_added(Node *node)
     // node_added fires once per node rather than once per subtree, so a node inside an added subtree (e.g. an instanced scene whose root carries the material) has to pick up what its ancestors would have cascaded to it
     VAMaterialType material = VAMaterialAir;
     bool use_flat_transmission = false;
-    PropagateMode filter = PropagateMode::All;
-    resolve_inherited(node, material, use_flat_transmission, filter);
+    PropagateMode propagateMode = PropagateMode::All;
+    resolve_inherited(node, material, use_flat_transmission, propagateMode);
 
-    add_primitive(node, material, use_flat_transmission, filter, false);
+    add_primitive(node, material, use_flat_transmission, propagateMode, false);
 }
 
 // Applies each ancestor's material/transmission/propagate metadata outermost first, the same order a recursive add_primitive cascades them in. Unknown materials aren't warned about here - they already were when their own node was added.
@@ -249,7 +249,7 @@ void VAWorld::resolve_inherited(Node *node, VAMaterialType &material, bool &use_
     if (parent->has_meta(MaterialMetaKey()))
         material = get_material(parent, false);
 
-    filter = read_propagate_filter(parent, filter);
+    filter = read_propagate_mode(parent, filter);
 
     if (parent->has_meta(UseFlatTransmissionMetaKey()))
         use_flat_transmission = parent->get_meta(UseFlatTransmissionMetaKey());
