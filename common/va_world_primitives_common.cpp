@@ -133,9 +133,12 @@ Node *VAWorld::top_level_scene_node(Node *node)
 
 void VAWorld::sync_primitive(Node *node)
 {
-    // Guards being called on a VAWorld whose world hasn't been created yet; should always be non-null in practice since this is only called via the debugger-message capture in register_types.cpp.
+    // world is only created in _enter_tree at runtime, so it's null in the editor or before this VAWorld enters the tree
     if (!world)
+    {
+        VA_WARN_NAMED("sync_primitive(", node->get_name(), ") was called before the world was created, ignoring");
         return;
+    }
 
     // The material that governs the edited node can live on an ancestor. add_primitive only sees that material if the walk starts at or above the node owning it, so restart from the top-level scene node instead of the edited node - otherwise the primitive is removed below and never re-added.
     Node *sync_root = top_level_scene_node(node);
@@ -240,6 +243,7 @@ void VAWorld::on_node_added(Node *node)
 // Applies each ancestor's material/transmission/propagate metadata outermost first, the same order a recursive add_primitive cascades them in. Unknown materials aren't warned about here - they already were when their own node was added.
 void VAWorld::resolve_inherited(Node *node, VAMaterialType &material, bool &use_flat_transmission, PropagateMode &filter)
 {
+    // Recursion base case: the tree root Window has no parent, so there's nothing left to inherit from
     Node *parent = node->get_parent();
     if (!parent)
         return;
