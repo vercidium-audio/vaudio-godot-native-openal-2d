@@ -6,15 +6,21 @@ version = "1.11.2"
 
 [libraries]
 
-windows.editor.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.windows.editor.x86_64.dll"
-windows.debug.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.windows.template_debug.x86_64.dll"
-windows.release.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.windows.template_release.x86_64.dll"
-linux.editor.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.linux.editor.x86_64.so"
-linux.debug.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.linux.template_debug.x86_64.so"
-linux.release.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.linux.template_release.x86_64.so"
-macos.editor = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.macos.editor.universal.dylib"
-macos.debug = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.macos.template_debug.universal.dylib"
-macos.release = "res://addons/vaudio-godot-native-openal-2d/bin/libvaudiogodotnativeopenal2d.macos.template_release.universal.dylib"
+windows.editor.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/windows/libvaudiogodotnativeopenal2d.windows.editor.x86_64.dll"
+windows.debug.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/windows/libvaudiogodotnativeopenal2d.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/windows/libvaudiogodotnativeopenal2d.windows.template_release.x86_64.dll"
+linux.editor.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/linux/libvaudiogodotnativeopenal2d.linux.editor.x86_64.so"
+linux.debug.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/linux/libvaudiogodotnativeopenal2d.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "res://addons/vaudio-godot-native-openal-2d/bin/linux/libvaudiogodotnativeopenal2d.linux.template_release.x86_64.so"
+macos.editor = "res://addons/vaudio-godot-native-openal-2d/bin/mac/libvaudiogodotnativeopenal2d.macos.editor.universal.dylib"
+macos.debug = "res://addons/vaudio-godot-native-openal-2d/bin/mac/libvaudiogodotnativeopenal2d.macos.template_debug.universal.dylib"
+macos.release = "res://addons/vaudio-godot-native-openal-2d/bin/mac/libvaudiogodotnativeopenal2d.macos.template_release.universal.dylib"
+
+[dependencies]
+
+windows.x86_64 = { "res://addons/vaudio-godot-native-openal-2d/bin/windows/vaudionative.dll": "", "res://addons/vaudio-godot-native-openal-2d/bin/windows/soft_oal.dll": "" }
+linux.x86_64 = { "res://addons/vaudio-godot-native-openal-2d/bin/linux/libvaudionative.so": "", "res://addons/vaudio-godot-native-openal-2d/bin/linux/libopenal.so.1": "" }
+macos = { "res://addons/vaudio-godot-native-openal-2d/bin/mac/libvaudionative.dylib": "", "res://addons/vaudio-godot-native-openal-2d/bin/mac/libopenal.1.dylib": "" }
 
 [icons]
 
