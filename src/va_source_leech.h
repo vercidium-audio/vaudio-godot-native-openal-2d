@@ -25,8 +25,6 @@ private:
 
     VABoundsPlayback playback;
 
-    void apply_raytracing_results();
-
 protected:
     static void _bind_methods();
 
@@ -50,7 +48,7 @@ public:
     // The parent emitter's VAEmitter::is_silenced_by_bounds, using its clamp_position
     bool is_silenced_by_bounds() const;
 
-    // Matches VASource's Play() override: returns false without playing until the parent emitter is ready to play, and follows the same bounds rules.
+    // Matches VASource's Play() override: waits until the parent emitter is ready to play, and follows the same bounds rules
     bool play() override;
 
     // Also cancels a play that's waiting, e.g. a loop waiting outside the bounds
