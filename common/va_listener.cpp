@@ -74,7 +74,7 @@ void VAListener::detach_from_world()
     va_world->unregister_listener(this);
 }
 
-// Takes over the shared handle from the previous listener, or creates it if this is the first listener in the world. Targets stay wired to the handle, so nothing needs re-adding.
+// Takes over the shared handle from the previous listener, or creates it if this is the first listener in the world. Targets stay connected to this listener.
 void VAListener::activate(::VAEmitter *shared_handle)
 {
     current = true;

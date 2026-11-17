@@ -1,3 +1,5 @@
+// Human-reviewed
+
 #include "al_source_handle.h"
 
 #include "../va_engine_util.h"
@@ -14,14 +16,10 @@ ALSourceHandle::~ALSourceHandle()
 
 bool ALSourceHandle::create()
 {
-    ALManager *manager = ALManager::get_singleton();
+    ALManager *manager = ALManager::get_initialized_singleton("play sound");
 
-    // The singleton is only set once OpenAL initialised, so the reason it failed was already logged at startup
-    if (!manager || !manager->is_initialized())
-    {
-        VA_ERROR("Can't play sound because OpenAL failed to start. Check the earlier vaudio errors in the Output panel, e.g. the OpenAL library is missing from the plugin's bin folder, or no audio output device was found");
+    if (!manager)
         return false;
-    }
 
     // alGetError is a single sticky flag, so clear any stale error before reading the result of alGenSources below
     manager->al_get_error()();
@@ -35,7 +33,7 @@ bool ALSourceHandle::create()
     {
         // OpenAL Soft reports AL_OUT_OF_MEMORY when the device's source limit (mono + stereo sources) is reached
         if (error == AL_OUT_OF_MEMORY)
-            VA_ERROR("Can't play sound because too many sounds are playing at once. Increase audio/vaudio/max_stereo_sources in Project Settings, or play fewer sounds at the same time. Error code: ", ALErrorToString(error));
+            VA_ERROR("Can't play sound because too many sounds are playing at once. Increase audio/vaudio/max_stereo_sources in Project Settings. Error code: ", ALErrorToString(error));
         else
             VA_ERROR("Failed to create an OpenAL source. Error code: ", ALErrorToString(error));
 
@@ -60,10 +58,7 @@ void ALSourceHandle::destroy()
 
     // No manager means OpenAL already shut down (plugin unloading, or a failed device switch), which destroyed every source along with its context
     if (manager && manager->is_initialized())
-    {
-        ALuint handles[1] = { handle };
-        manager->al_delete_sources()(1, handles);
-    }
+        manager->delete_source(handle);
 
     handle = 0;
 }

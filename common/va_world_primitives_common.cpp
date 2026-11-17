@@ -241,19 +241,19 @@ void VAWorld::on_node_added(Node *node)
 }
 
 // Applies each ancestor's material/transmission/propagate metadata outermost first, the same order a recursive add_primitive cascades them in. Unknown materials aren't warned about here - they already were when their own node was added.
-void VAWorld::resolve_inherited(Node *node, VAMaterialType &material, bool &use_flat_transmission, PropagateMode &filter)
+void VAWorld::resolve_inherited(Node *node, VAMaterialType &material, bool &use_flat_transmission, PropagateMode &propagateMode)
 {
     // Recursion base case: the tree root Window has no parent, so there's nothing left to inherit from
     Node *parent = node->get_parent();
     if (!parent)
         return;
 
-    resolve_inherited(parent, material, use_flat_transmission, filter);
+    resolve_inherited(parent, material, use_flat_transmission, propagateMode);
 
     if (parent->has_meta(MaterialMetaKey()))
         material = get_material(parent, false);
 
-    filter = read_propagate_mode(parent, filter);
+    propagateMode = read_propagate_mode(parent, propagateMode);
 
     if (parent->has_meta(UseFlatTransmissionMetaKey()))
         use_flat_transmission = parent->get_meta(UseFlatTransmissionMetaKey());

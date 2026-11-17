@@ -26,6 +26,12 @@ The ARM64 OpenAL Soft 1.25.2 builds come from the `Vercidium/openal-soft-github-
 
 This is the 2D counterpart to `vaudio-godot-native-openal-3d`, which is the closest precedent to draw from when porting functionality. `vaudio-godot-mono-openal-2d` (the existing Mono/C# 2D plugin) is the reference for which primitive node types, world properties and behavioural quirks are 2D-specific vs shared.
 
+# Shared common folder
+
+`common/` is a local Windows junction to `../vaudio-godot-native-openal-3d/common`, which is the source of truth. Edit common files there, never as 2D-only copies - anything dimension-specific belongs in `src/`. Git follows the junction, so this repo still tracks real copies of the files (remote Linux/Mac clones get a normal folder), and every edit to the 3D common folder also shows as modified here, so commit both repos together. A fresh Windows clone has a real `common/` folder, so recreate the junction with `mklink /J common ..\vaudio-godot-native-openal-3d\common` after deleting it.
+
+SConstruct builds object files into the gitignored `obj/` folder (`VariantDir`) rather than beside the sources, since both plugins would otherwise write the same object file names into the shared `common/` folder.
+
 # C++ code style
 
 - Allman brace style: opening curly braces go on their own new line (for functions, classes,
