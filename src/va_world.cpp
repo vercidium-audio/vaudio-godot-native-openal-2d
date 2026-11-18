@@ -292,6 +292,9 @@ void VAWorld::_process(double delta)
         return;
     }
 
+    if (ALManager *manager = ALManager::get_singleton())
+        manager->check_device_connected();
+
     if (listener)
     {
         ALManager *manager = ALManager::get_singleton();
