@@ -36,7 +36,7 @@ public:
     void set_current(bool value);
     void make_current();
 
-    // Called by VAWorld. Every listener in a world shares one SDK emitter handle, which only the current listener points at and drives.
+    // Called by VAWorld. Every listener in a world shares one SDK emitter, which is controlled by the current listener
     void activate(::VAEmitter *shared_handle);
     void deactivate();
     void release_shared_handle();

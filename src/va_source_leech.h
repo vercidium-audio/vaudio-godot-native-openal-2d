@@ -12,7 +12,6 @@ using namespace godot;
 
 namespace va_godot
 {
-class VAWorld;
 class VAEmitter;
 }
 
@@ -21,14 +20,10 @@ class VASourceLeech : public ALSource2D
     GDCLASS(VASourceLeech, ALSource2D);
 
 private:
-    va_godot::VAWorld *va_world = nullptr;
-
     // Not owned - the parent VAEmitter this node leeches raytracing results off, resolved once in _enter_tree via get_parent().
     va_godot::VAEmitter *emitter = nullptr;
 
     VABoundsPlayback playback;
-
-    void apply_raytracing_results(va_godot::VAEmitter *other);
 
 protected:
     static void _bind_methods();
@@ -53,7 +48,7 @@ public:
     // The parent emitter's VAEmitter::is_silenced_by_bounds, using its clamp_position
     bool is_silenced_by_bounds() const;
 
-    // Matches VASource's Play() override: returns false without playing until the parent emitter is ready to play, and follows the same bounds rules.
+    // Matches VASource's Play() override: waits until the parent emitter is ready to play, and follows the same bounds rules
     bool play() override;
 
     // Also cancels a play that's waiting, e.g. a loop waiting outside the bounds

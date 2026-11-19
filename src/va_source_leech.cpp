@@ -5,8 +5,6 @@
 
 #include "va_emitter.h"
 #include "va_engine_util.h"
-#include "va_world.h"
-#include "va_world_lookup.h"
 
 void VASourceLeech::_bind_methods()
 {
@@ -47,22 +45,21 @@ void VASourceLeech::_enter_tree()
 
     if (!emitter)
     {
-        VA_WARN(
-            "'", get_name(),
-            "' is a VASourceLeech but its parent is not a VAEmitter - "
-            "it will never play. VASourceLeech must be a direct child of a "
-            "VAEmitter (or VAListener) node whose own raytracing results it "
-            "leeches off.");
+        VA_WARN_NAMED("This source will never play. VASourceLeech nodes must be a direct child of a VAEmitter node.");
         return;
     }
 
-    va_world = va_godot::find_va_world(this);
+    if (emitter->is_main_listener())
+    {
+        emitter = nullptr;
+        VA_WARN_NAMED("This source will never play. VASourceLeech nodes can't be a child of a VAListener node. Use a VASourceRelative instead.");
+        return;
+    }
 }
 
 void VASourceLeech::_exit_tree()
 {
     emitter = nullptr;
-    va_world = nullptr;
 }
 
 bool VASourceLeech::is_raytraced() const
@@ -82,12 +79,11 @@ bool VASourceLeech::is_silenced_by_bounds() const
 
 bool VASourceLeech::play()
 {
-    if (playback.apply_on_play(*this, is_silenced_by_bounds()))
-        return false;
+    bool silenced = is_silenced_by_bounds();
 
-    // Wait for the parent emitter's muffling and reverb results, so the sound never starts unmuffled or without reverb
-    if (!is_ready_to_play())
-        return false;
+    // Returns true while waiting for the parent emitter to be ready, and false while silenced by the bounds, even for a loop that will play once inside
+    if (!playback.request_play(*this, silenced, is_ready_to_play()))
+        return !silenced;
 
     bool played = ALSource2D::play();
 
@@ -111,39 +107,14 @@ void VASourceLeech::_process(double delta)
 {
     ALSource2D::_process(delta);
 
-    bool silenced = playback.apply(*this, is_silenced_by_bounds());
-
-    if (!is_raytraced())
-    {
-        return;
-    }
-
-    if (!silenced && playback.is_pending(get_autoplay()) && is_ready_to_play())
-    {
+    // Stops the sound while the parent emitter is outside the bounds, and starts a queued play or autoplay once it's ready
+    if (playback.process(*this, is_silenced_by_bounds(), is_ready_to_play(), get_autoplay()))
         play();
-    }
 
-    if (!va_world)
-    {
+    if (!is_ready_to_play())
         return;
-    }
 
-    va_godot::VAEmitter *listener = va_world->get_listener();
-
-    if (listener)
-    {
-        apply_raytracing_results(listener);
-    }
-}
-
-// Same as VASource::apply_raytracing_results, but reads results off the parent VAEmitter this node leeches instead of an owned child emitter.
-void VASourceLeech::apply_raytracing_results(va_godot::VAEmitter *other)
-{
-    effect = va_world->get_reverb_effect(emitter->get_handle());
-
-    if (other->has_raytraced_target(emitter))
-    {
-        VALowPassFilter vaudio_filter = other->get_target_filter(emitter);
-        update_filter(vaudio_filter.gainLF, vaudio_filter.gainHF, true);
-    }
+    // Copies the parent VAEmitter's muffling and reverb, which it updates in its own _process before this child's. The effect is null if it casts no reverb rays
+    effect = emitter->get_effect();
+    update_filter(emitter->get_muffling_gain_lf(), emitter->get_muffling_gain_hf(), true);
 }
