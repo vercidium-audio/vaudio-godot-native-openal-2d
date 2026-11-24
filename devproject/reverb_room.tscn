@@ -13,8 +13,7 @@ position = Vector2(-500, -320)
 bounds_size = Vector2(1000, 640)
 meters_per_unit = 0.02
 
-[node name="RoomMaterial" type="VACustomMaterial" parent="VAWorld"]
-material_name = "room"
+[node name="Room" type="VACustomMaterial" parent="VAWorld"]
 absorption_lf = 0.1
 absorption_hf = 0.15
 scattering = 0.3

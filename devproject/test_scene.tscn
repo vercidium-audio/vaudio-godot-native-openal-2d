@@ -28,8 +28,7 @@ bounds_size = Vector2(1120, 620)
 meters_per_unit = 0.1001
 position = Vector2(-560, -310)
 
-[node name="VACustomMaterial" type="VACustomMaterial" parent="VAWorld" unique_id=1927224138]
-material_name = "carpet"
+[node name="Carpet" type="VACustomMaterial" parent="VAWorld" unique_id=1927224138]
 absorption_lf = 0.4
 absorption_hf = 0.6
 
