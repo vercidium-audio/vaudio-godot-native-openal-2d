@@ -1,3 +1,5 @@
+// Human-reviewed
+
 #include "va_source_leech.h"
 
 #include <godot_cpp/core/class_db.hpp>

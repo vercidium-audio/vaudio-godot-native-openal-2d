@@ -1,3 +1,5 @@
+// AI-created
+
 #pragma once
 
 #include <godot_cpp/classes/collision_shape2d.hpp>

@@ -1,3 +1,5 @@
+// AI-created
+
 #include "va_emitter.h"
 
 #include "va_engine_util.h"
