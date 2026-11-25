@@ -1,3 +1,5 @@
+rem AI-created
+
 @echo off
 setlocal
 
