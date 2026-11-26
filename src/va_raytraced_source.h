@@ -1,8 +1,8 @@
-// Human-reviewed
+// AI-created
 
 #pragma once
 
-#include "al_source2d.h"
+#include "va_player2d.h"
 
 extern "C"
 {
@@ -17,9 +17,9 @@ class VAWorld;
 class VAEmitter;
 }
 
-class VARaytracedSource : public ALSource2D
+class VARaytracedSource : public VAPlayer2D
 {
-    GDCLASS(VARaytracedSource, ALSource2D);
+    GDCLASS(VARaytracedSource, VAPlayer2D);
 
 private:
     va_godot::VAWorld *va_world = nullptr;

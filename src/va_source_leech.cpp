@@ -1,4 +1,4 @@
-// Human-reviewed
+// AI-created
 
 #include "va_source_leech.h"
 
@@ -28,12 +28,12 @@ VASourceLeech::~VASourceLeech()
 
 float VASourceLeech::get_muffling_gain_lf() const
 {
-    return filter.get_gain();
+    return get_muffling_gain_lf_value();
 }
 
 float VASourceLeech::get_muffling_gain_hf() const
 {
-    return filter.get_gain_hf();
+    return get_muffling_gain_hf_value();
 }
 
 void VASourceLeech::_enter_tree()
@@ -87,7 +87,7 @@ bool VASourceLeech::play(float start_time)
     if (!playback.request_play(*this, silenced, is_ready_to_play(), start_time))
         return !silenced;
 
-    bool played = ALSource2D::play(start_time);
+    bool played = VAPlayer2D::play(start_time);
 
     if (played)
         playback.on_played();
@@ -98,7 +98,7 @@ bool VASourceLeech::play(float start_time)
 void VASourceLeech::stop()
 {
     playback.cancel();
-    ALSource2D::stop();
+    VAPlayer2D::stop();
 }
 
 void VASourceLeech::_ready()
@@ -107,7 +107,7 @@ void VASourceLeech::_ready()
 
 void VASourceLeech::_process(double delta)
 {
-    ALSource2D::_process(delta);
+    VAPlayer2D::_process(delta);
 
     // Stops the sound while the parent emitter is outside the bounds, and starts a queued play or autoplay once it's ready
     if (playback.process(*this, is_silenced_by_bounds(), is_ready_to_play(), get_autoplay()))
@@ -117,6 +117,6 @@ void VASourceLeech::_process(double delta)
         return;
 
     // Copies the parent VAEmitter's muffling and reverb, which it updates in its own _process before this child's. The effect is null if it casts no reverb rays
-    effect = emitter->get_effect();
+    reverb_effect = emitter->get_reverb_effect();
     update_filter(emitter->get_muffling_gain_lf(), emitter->get_muffling_gain_hf(), true);
 }

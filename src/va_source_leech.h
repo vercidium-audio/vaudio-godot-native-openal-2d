@@ -1,8 +1,8 @@
-// Human-reviewed
+// AI-created
 
 #pragma once
 
-#include "al_source2d.h"
+#include "va_player2d.h"
 #include "va_bounds_playback.h"
 
 extern "C"
@@ -17,9 +17,9 @@ namespace va_godot
 class VAEmitter;
 }
 
-class VASourceLeech : public ALSource2D
+class VASourceLeech : public VAPlayer2D
 {
-    GDCLASS(VASourceLeech, ALSource2D);
+    GDCLASS(VASourceLeech, VAPlayer2D);
 
 private:
     // Not owned - the parent VAEmitter this node leeches raytracing results off, resolved once in _enter_tree via get_parent().
